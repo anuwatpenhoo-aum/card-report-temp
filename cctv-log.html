@@ -48,7 +48,6 @@ p{margin:0}
 select,.btn{font:inherit;font-size:.95rem;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer}
 .btn:hover,select:hover{border-color:var(--accent)}
 .btn:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-#file{display:none}
 .drop-hint{font-size:.82rem;color:var(--ink-3)}
 .loaded{font-size:.85rem;color:var(--ink-2)}
 
@@ -143,6 +142,19 @@ footer{font-size:.82rem;color:var(--ink-3)}
 .step h3{font-size:1rem}
 .step .raw{font-size:.75rem}
 .files{font-size:.82rem;color:var(--ink-3)}
+#file{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0)}
+#file:focus-visible+label.btn{outline:2px solid var(--accent);outline-offset:2px}
+label.btn{display:inline-flex;align-items:center;user-select:none}
+.chname{font-family:var(--f-mono);font-size:.95rem;padding:7px 4px}
+.seq{display:flex;flex-direction:column;gap:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.seq-row{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
+.seq-row:last-child{border-bottom:0}
+.seq-row .off{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--ink-3);font-size:.9rem}
+.seq-row .ev{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;min-width:0}
+.seq-row .ev b{font-weight:600}
+.seq-row .ev span{font-size:.88rem;color:var(--ink-2)}
+.seq-row.fail{background:var(--crit-soft)}
+.seq-row.loop .off{color:var(--accent)}
 </style>
 <div class="wrap" id="app">
   <header class="top">
@@ -151,10 +163,11 @@ footer{font-size:.82rem;color:var(--ink-3)}
       <h1 id="h1">รายงานกล้อง</h1>
     </div>
     <div class="controls">
-      <label for="cam" class="small muted">ช่อง</label>
+      <label for="cam" class="small muted" id="camLbl">ช่อง</label>
       <select id="cam"></select>
-      <button class="btn" id="pick" type="button">เปิดไฟล์ Log</button>
-      <input type="file" id="file" accept=".csv,text/csv" multiple>
+      <span class="chname" id="camOne" hidden></span>
+      <input type="file" id="file" multiple>
+      <label class="btn" for="file" id="pick">เปิดไฟล์ Log (.csv)</label>
     </div>
   </header>
 
@@ -187,7 +200,7 @@ footer{font-size:.82rem;color:var(--ink-3)}
 
   <section id="cycleSec">
     <div class="sec-head"><h2>อาการที่วนซ้ำ</h2><p class="muted small" id="cycleSub"></p></div>
-    <div class="cycle" id="cycle"></div>
+    <div class="seq" id="cycle"></div>
   </section>
 
   <section>
@@ -224,6 +237,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 const pad=n=>String(n).padStart(2,"0");
 const hm=d=>pad(d.getHours())+":"+pad(d.getMinutes());
 const hms=d=>hm(d)+":"+pad(d.getSeconds());
+const CYC=new Set(["เริ่มบันทึกทันที","หยุดบันทึก","กล้องไอพีขาดการเชื่อมต่อ","สถานะการเชื่อมต่อกล้อง IP","การเชื่อมต่อ ipc"]);
 const dmy=d=>pad(d.getDate())+"/"+pad(d.getMonth()+1)+"/"+d.getFullYear();
 const fmtNum=n=>n.toLocaleString("th-TH");
 function dur(min){min=Math.round(min);const h=Math.floor(min/60),m=min%60;return h?`${h} ชม. ${m} น.`:`${m} นาที`;}
@@ -285,6 +299,8 @@ function load(rows,meta,src){
   if(!chans.length)chans.push("D12");
   chans.forEach(c=>{const o=document.createElement("option");o.value=c;o.textContent=c+(cnt[c]?` (หลุด ${fmtNum(cnt[c])})`:"");sel.appendChild(o);});
   sel.value=chans.includes(prev)?prev:chans[0];
+  const one=chans.length===1;
+  sel.hidden=one;$("camOne").hidden=!one;$("camOne").textContent=chans[0]+(cnt[chans[0]]?` · หลุด ${fmtNum(cnt[chans[0]])} ครั้ง`:"");
   render(sel.value);
 }
 
@@ -321,8 +337,22 @@ function analyze(ch){
   const ds=disc.filter(r=>r.sec);let cycleSec=null;
   if(ds.length>2){const g=[];for(let i=1;i<ds.length;i++){const x=(ds[i].t-ds[i-1].t)/1000;if(x>0&&x<120)g.push(x);}g.sort((a,b)=>a-b);cycleSec=g[Math.floor(g.length/2)];}
   else if(disc.length>1)cycleSec=(disc[disc.length-1].t-disc[0].t)/1000/(disc.length-1);
-  const badMin=status.filter(s=>s==="bad").length;
-  return {ch,n,t0,t1,disc,reasons,reconn,ip,proto,port,info,stoppedAt,status,ongoing,firstBad,cycleSec,badMin,playErr,mins};
+  let badMin=status.filter(s=>s==="bad").length;
+  if(stoppedAt)badMin=Math.round((t1-stoppedAt)/60000)+eps.filter(e=>t0.getTime()+e.end*60000<stoppedAt).reduce((a,e)=>a+e.end-e.start+1,0);
+  // other channels from the latest per-channel stats row
+  const lastStats=[...ROWS].reverse().find(r=>r.sub==="ระบบทำงานอยู่"&&/^D1 Len/m.test(r.d));
+  let othersOk=0,othersBad=[];
+  if(lastStats){lastStats.d.split("\n").forEach(l=>{const m=/^(D\d+) Len: (\d+).*Time: (.+)$/.exec(l);if(!m||m[1]===ch)return;const lt=parseDash(m[3]);if(!lt||lt.getFullYear()<2000)return;if(lastStats.t-lt<=5*60000)othersOk++;else othersBad.push(m[1]);});}
+  // one real cycle (second-resolution rows): from a record start to the next record start
+  let sample=null;
+  const evs=ROWS.filter(r=>r.sec&&CYC.has(r.sub)&&(r.ch===ch||camNoRe.test(r.d)));
+  for(let i=0;i<evs.length&&!sample;i++){
+    if(evs[i].sub!=="เริ่มบันทึกทันที")continue;
+    const seq=[evs[i]];
+    for(let j=i+1;j<evs.length&&j<i+8;j++){seq.push(evs[j]);if(evs[j].sub==="เริ่มบันทึกทันที")break;}
+    if(seq.length>=4&&seq[seq.length-1].sub==="เริ่มบันทึกทันที"&&seq.some(r=>r.sub.includes("ขาดการเชื่อมต่อ")))sample=seq;
+  }
+  return {othersOk,othersBad,sample,ch,n,t0,t1,disc,reasons,reconn,ip,proto,port,info,stoppedAt,status,ongoing,firstBad,cycleSec,badMin,playErr,mins};
 }
 
 /* ---------- render ---------- */
@@ -336,7 +366,7 @@ function render(ch){
   $("verdict").className="verdict "+(bad?"bad":"ok");
   if(bad){
     $("vTitle").textContent=A.stoppedAt?`${ch} ไม่บันทึกภาพตั้งแต่ ${hms(A.stoppedAt)} น.`:`${ch} หลุดเป็นช่วงๆ เริ่ม ${hm(A.firstBad)} น.`;
-    $("vSub").textContent=A.ongoing?`ยังไม่หาย ณ ${hm(A.t1)} น. (รายการสุดท้ายของ log)`:`หลุดครั้งสุดท้าย ${hm(A.disc[A.disc.length-1].t)} น.`;
+    $("vSub").textContent=A.ongoing?`ยังเป็นอยู่ถึง ${hms(A.t1)} น. (รายการสุดท้ายของ log)`:`หลุดครั้งสุดท้าย ${hm(A.disc[A.disc.length-1].t)} น.`;
   }else{
     $("vTitle").textContent=`${ch} ปกติ`;
     $("vSub").textContent="ไม่พบการหลุดในช่วง log นี้";
@@ -345,7 +375,7 @@ function render(ch){
     [A.badMin?dur(A.badMin):"0","ไม่มีภาพ"],
     [fmtNum(A.disc.length),"ครั้งที่หลุด"],
     [A.cycleSec?`${Math.round(A.cycleSec)} วิ`:"–","หลุดซ้ำทุก"],
-    [A.disc.length?fmtNum(A.reconn.length):"–","ต่อกลับได้"]
+    [A.disc.length?fmtNum(A.reconn.length):"–","เชื่อมต่อกลับ"]
   ];
   $("tiles").innerHTML=tiles.map(([v,k])=>`<div class="tile"><span class="v">${esc(v)}</span><span class="k">${esc(k)}</span></div>`).join("");
   $("capNote").hidden=!META.lastCapped;
@@ -385,40 +415,63 @@ function drawChart(A){
   svg.innerHTML=s;
   const tip=$("tip"),wrap=svg.parentNode.parentNode;
   svg.querySelectorAll(".hit").forEach(r=>{
-    r.addEventListener("mouseenter",()=>{const k=+r.dataset.k,a=new Date(A.t0.getTime()+k*600000),b=new Date(a.getTime()+600000);tip.textContent=`${hm(a)}–${hm(b)} · หลุด ${r.dataset.c} ครั้ง`;tip.classList.add("on");});
-    r.addEventListener("mousemove",e=>{const bb=wrap.getBoundingClientRect();tip.style.left=(e.clientX-bb.left)+"px";tip.style.top=(e.clientY-bb.top)+"px";});
-    r.addEventListener("mouseleave",()=>tip.classList.remove("on"));
+    const show=()=>{const k=+r.dataset.k,a=new Date(A.t0.getTime()+k*600000),b=new Date(a.getTime()+600000);tip.textContent=`${hm(a)}–${hm(b)} · หลุด ${r.dataset.c} ครั้ง`;tip.classList.add("on");};
+    r.addEventListener("pointerenter",show);
+    r.addEventListener("pointerdown",e=>{show();const bb=wrap.getBoundingClientRect();tip.style.left=(e.clientX-bb.left)+"px";tip.style.top=(e.clientY-bb.top)+"px";});
+    r.addEventListener("pointermove",e=>{const bb=wrap.getBoundingClientRect();tip.style.left=(e.clientX-bb.left)+"px";tip.style.top=(e.clientY-bb.top)+"px";});
+    r.addEventListener("pointerleave",e=>{if(e.pointerType==="mouse")tip.classList.remove("on");});
   });
 }
 
 function renderCycle(A){
   const sec=$("cycleSec");
   if(!A.disc.length){sec.hidden=true;return;}sec.hidden=false;
-  const reason=Object.keys(A.reasons)[0]||"";
-  const r20=/(\d+)s/.exec(reason);
-  const steps=[
-    ["","ต่อกล้องได้","อ่านรุ่น/ซีเรียลกล้องได้","การเชื่อมต่อ ipc"],
-    ["","สั่งบันทึก","ขอภาพสตรีมหลัก","เริ่มบันทึกทันที"],
-    ["fail",`ไม่มีภาพ ${r20?r20[1]+" วิ":""}`,"กล้องไม่ส่งภาพมา",reason.replace(/^.*--\s*/,"")],
-    ["fail","ตัดแล้ววนใหม่",A.cycleSec?`รอบละ ~${Math.round(A.cycleSec)} วิ`:"","กล้องไอพีขาดการเชื่อมต่อ"]
-  ];
-  $("cycle").innerHTML=steps.map(([c,t,d,raw],i)=>`<div class="step ${c}"><span class="n">${i+1}</span><h3>${esc(t)}</h3><p class="small muted">${esc(d)}</p><span class="raw">${esc(raw)}</span></div>`).join("");
-  $("cycleSub").textContent=`log หลายพันบรรทัดของ ${A.ch} คือ 4 บรรทัดนี้ซ้ำ ${fmtNum(A.disc.length)} รอบ`;
+  const reason=(Object.keys(A.reasons)[0]||"").replace(/^.*--\s*/,"");
+  const note=r=>{
+    if(r.sub.includes("ขาดการเชื่อมต่อ"))return reason;
+    if(r.sub.includes("สถานะการเชื่อมต่อกล้อง"))return (/สถานะกล้อง:\s*(.*)/.exec(r.d)||[])[1]||"";
+    if(r.sub.includes("ipc"))return A.info.model?`อ่านรุ่น ${A.info.model} ได้`:"";
+    return "";
+  };
+  let rows;
+  if(A.sample){
+    const s0=A.sample[0].t;
+    rows=A.sample.map((r,i)=>{const off=Math.round((r.t-s0)/1000);const last=i===A.sample.length-1;
+      return `<div class="seq-row${r.sub.includes("ขาดการเชื่อมต่อ")||r.sub==="หยุดบันทึก"?" fail":""}${last?" loop":""}"><span class="off">${last?"↻ ":""}+${off} วิ</span><div class="ev"><b>${esc(r.sub)}</b><span>${esc(last?"วนรอบใหม่":note(r))}</span></div></div>`;});
+    $("cycleSub").textContent=`ตัวอย่างจริงจาก log เวลา ${hms(s0)} น. · ซ้ำ ${fmtNum(A.disc.length)} รอบ`;
+  }else{
+    rows=["เริ่มบันทึกทันที","หยุดบันทึก","กล้องไอพีขาดการเชื่อมต่อ","สถานะการเชื่อมต่อกล้อง IP","การเชื่อมต่อ ipc"].map(s=>`<div class="seq-row${/หยุด|ขาด/.test(s)?" fail":""}"><span class="off">–</span><div class="ev"><b>${esc(s)}</b><span>${esc(s.includes("ขาด")?reason:"")}</span></div></div>`);
+    $("cycleSub").textContent=`ซ้ำ ${fmtNum(A.disc.length)} รอบ`;
+  }
+  $("cycle").innerHTML=rows.join("");
 }
 
 function renderEvidence(A){
   const internal=/^192\.168\.254\./.test(A.ip);
-  const fast=A.cycleSec&&A.cycleSec<45;
+  const back=A.sample?(()=>{const d=A.sample.find(r=>r.sub.includes("ขาดการเชื่อมต่อ")),c=A.sample.find(r=>r.sub.includes("สถานะการเชื่อมต่อกล้อง"));return d&&c?Math.round((c.t-d.t)/1000):null;})():null;
+  const reason=(Object.keys(A.reasons)[0]||"").replace(/^.*--\s*/,"");
   const card=(chip,cls,items)=>`<div class="panel ev"><span><span class="chip ${cls}">${chip}</span></span><ul>${items.map(x=>`<li>${x}</li>`).join("")}</ul></div>`;
+  const span=A.firstBad?`${A.stoppedAt?hm(A.stoppedAt):hm(A.firstBad)} → ${hm(A.t1)} ไม่หายเอง`:"";
   $("evidence").innerHTML=
-    card("เข้าทาง PoE","w",[internal?`เสียบพอร์ต PoE หลัง NVR <span class="mono small">(${esc(A.ip)})</span>`:`IP <span class="mono">${esc(A.ip||"-")}</span>`,"เสียยาว ไม่หายเอง","ช่องอื่นปกติทั้งหมด"])+
-    card("เข้าทางกล้องค้าง","a",[fast?`ต่อกลับได้ทุก ~${Math.round(A.cycleSec)} วิ = กล้องยังมีไฟ`:"NVR ยังคุยกับกล้องได้","หายแค่ภาพ ไม่ได้ดับทั้งตัว"])+
-    card("สรุป","c",[`ไม่ใช่ไฟดับทั้งเส้น`,`ต้นเหตุอยู่ที่ <strong>กล้อง</strong>, <strong>สาย</strong> หรือ <strong>พอร์ต</strong> ของ ${esc(A.ch)}`]);
+    card("เข้าทาง PoE","w",[
+      internal?`IP <span class="mono small">${esc(A.ip)}</span> = วงพอร์ต PoE หลัง NVR`:`IP <span class="mono small">${esc(A.ip||"-")}</span>`,
+      span,
+      A.othersOk?`ช่องอื่น ${A.othersOk} ช่องบันทึกปกติ${A.othersBad.length?` (ยกเว้น ${esc(A.othersBad.join(", "))})`:""}`:""
+    ].filter(Boolean))+
+    card("เข้าทางกล้องค้าง","a",[
+      back!=null?`หลุดแล้วเชื่อมต่อกลับใน ${back} วิ`:"NVR เชื่อมต่อกลับได้ทุกรอบ",
+      A.info.model?`อ่านรุ่น/ซีเรียลกล้องได้ทุกรอบ`:"",
+      reason?`สาเหตุใน log: <span class="mono small">${esc(reason)}</span>`:""
+    ].filter(Boolean))+
+    card("สรุป","c",[`กล้องยังตอบ NVR แต่ไม่ส่งภาพ`,`ต้นเหตุอยู่ที่ <strong>กล้อง</strong>, <strong>สาย</strong> หรือ <strong>พอร์ต</strong> ของ ${esc(A.ch)}`]);
 }
 
 function renderHours(A){
   const h={};
   for(let i=0;i<A.mins;i++){const k=new Date(A.t0.getTime()+i*60000).getHours();(h[k]=h[k]||{n:0,bad:0,d:0}).n++;if(A.status[i]==="bad")h[k].bad++;}
+  if(A.stoppedAt)Object.keys(h).forEach(k=>{const a=new Date(A.t0);a.setHours(+k,0,0,0);const b=new Date(a.getTime()+3600000);
+    const s=Math.max(a,A.stoppedAt,A.t0),e=Math.min(b,A.t1);const ov=Math.max(0,Math.round((e-s)/60000));
+    if(A.stoppedAt>=a){h[k].bad=ov;}else if(ov>0)h[k].bad=Math.max(h[k].bad,ov);});
   A.disc.forEach(r=>{const k=r.t.getHours();if(h[k])h[k].d++;});
   const keys=Object.keys(h).map(Number).sort((a,b)=>a-b);
   $("hourTbl").innerHTML=`<thead><tr><th>ชั่วโมง</th><th>${esc(A.ch)}</th><th style="text-align:right">หลุด</th></tr></thead><tbody>`+
@@ -443,7 +496,7 @@ function renderOther(A){
   const camRe=new RegExp("หมายเลขกล้อง:\\s*"+A.n+"(\\D|$)");
   const skip=r=>r.sub==="ระบบทำงานอยู่"||r.sub.includes("S.M.A.R.T")||r.ch===A.ch||((r.sub.includes("ipc")||r.sub.includes("สถานะการเชื่อมต่อกล้อง"))&&(camRe.test(r.d)||!/หมายเลขกล้อง/.test(r.d)));
   const g={};
-  ROWS.filter(r=>!skip(r)).forEach(r=>{const k=r.sub+"|"+(r.ch||"")+"|"+(r.user||"")+"|"+(r.ip||"");(g[k]=g[k]||[]).push(r);});
+  ROWS.filter(r=>!skip(r)).forEach(r=>{const c=r.ch||(/กล้อง:\s*(D\d+)/.exec(r.d)||[])[1]||"";const k=r.sub+"|"+c+"|"+(r.user||"")+"|"+(r.ip||"");(g[k]=g[k]||[]).push(r);});
   const rows=Object.entries(g).sort((a,b)=>a[1][0].t-b[1][0].t);
   $("otherTbl").innerHTML=`<thead><tr><th>เหตุการณ์</th><th>ช่อง / ผู้ใช้</th><th>IP</th><th style="text-align:right">ครั้ง</th><th>เวลา</th></tr></thead><tbody>`+
     (rows.map(([k,v])=>{const [sub,ch,user,ip]=k.split("|");const a=v[0].t,b=v[v.length-1].t;
@@ -452,16 +505,19 @@ function renderOther(A){
 
 /* ---------- wiring ---------- */
 $("cam").addEventListener("change",e=>render(e.target.value));
-$("pick").addEventListener("click",()=>$("file").click());
 function readFiles(list){
-  const fs=[...list].filter(f=>/\.csv$/i.test(f.name)||f.type.includes("csv"));
+  const fs=[...list];
   if(!fs.length)return;
-  Promise.all(fs.map(f=>f.text().then(t=>{const rows=parseCSV(t);const body=rows[0]&&/เวลา|time/i.test(rows[0][0])?rows.slice(1):rows;return {raw:body,n:body.length,name:f.name};})))
+  $("pick").textContent="กำลังอ่าน…";
+  const txt=f=>f.text?f.text():new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result));fr.onerror=no;fr.readAsText(f,"utf-8");});
+  Promise.all(fs.map(f=>txt(f).then(t=>{const rows=parseCSV(t);const body=rows[0]&&/เวลา|time/i.test(rows[0][0])?rows.slice(1):rows;return {raw:body,n:body.length,name:f.name};})))
     .then(files=>{const m=mergeFiles(files);
-      if(!m.rows.length){$("vTitle").textContent="อ่านไฟล์ไม่ได้: ไม่พบรายการ log";return;}
-      load(m.rows,m.meta,files.map(f=>f.name).join(", "));});
+      $("pick").textContent="เปิดไฟล์ Log (.csv)";
+      if(!m.rows.length){$("vTitle").textContent="อ่านไฟล์ไม่ได้: ไม่พบรายการ log ในไฟล์ที่เลือก (ต้องเป็น CSV ที่ส่งออกจาก NVR)";return;}
+      load(m.rows,m.meta,files.map(f=>f.name).join(", "));})
+    .catch(()=>{$("pick").textContent="เปิดไฟล์ Log (.csv)";$("vTitle").textContent="อ่านไฟล์ไม่ได้ ลองเลือกไฟล์ใหม่อีกครั้ง";});
 }
-$("file").addEventListener("change",e=>readFiles(e.target.files));
+$("file").addEventListener("change",e=>{readFiles(e.target.files);e.target.value="";});
 document.addEventListener("dragover",e=>e.preventDefault());
 document.addEventListener("drop",e=>{e.preventDefault();readFiles(e.dataTransfer.files);});
 
