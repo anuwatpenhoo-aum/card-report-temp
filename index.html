@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบวิเคราะห์ข้อมูลการทาบบัตรพร้อมฟิลเตอร์รายวัน (ตั้งแต่ 30/10/2569)</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         :root {
             --bg: #f8fafc;
@@ -20,13 +23,14 @@
             --warning-light: #fffbeb;
             --success: #16a34a;
             --success-light: #f0fdf4;
+            --font: 'Sarabun', Tahoma, sans-serif;
         }
         * {
             box-sizing: border-box;
         }
         body {
-            font-family: 'Angsana New', 'Sarabun', Tahoma, sans-serif;
-            font-size: 16pt;
+            font-family: var(--font);
+            font-size: 15px;
             background-color: var(--bg);
             color: var(--text-main);
             margin: 0;
@@ -53,13 +57,13 @@
         }
         .header h1 {
             margin: 0;
-            font-size: 24pt;
+            font-size: 24px;
             color: var(--text-main);
         }
         .header p {
             margin: 4px 0 0 0;
             color: var(--text-muted);
-            font-size: 15pt;
+            font-size: 14px;
         }
         /* Date Filter Bar */
         .date-bar {
@@ -85,8 +89,8 @@
             flex-wrap: wrap;
         }
         .date-select, .date-input {
-            font-family: 'Angsana New', sans-serif;
-            font-size: 16pt;
+            font-family: var(--font);
+            font-size: 15px;
             padding: 4px 12px;
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -104,8 +108,8 @@
             flex-wrap: wrap;
         }
         .date-chip {
-            font-family: 'Angsana New', sans-serif;
-            font-size: 15pt;
+            font-family: var(--font);
+            font-size: 14px;
             padding: 4px 12px;
             border-radius: 999px;
             border: 1px solid var(--border);
@@ -144,17 +148,17 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
         .kpi-title {
-            font-size: 15pt;
+            font-size: 14px;
             color: var(--text-muted);
             margin-bottom: 6px;
         }
         .kpi-value {
-            font-size: 28pt;
+            font-size: 28px;
             font-weight: bold;
             line-height: 1.1;
         }
         .kpi-sub {
-            font-size: 14pt;
+            font-size: 13px;
             color: var(--text-muted);
             margin-top: 6px;
         }
@@ -182,7 +186,7 @@
         }
         .section-title {
             margin: 0;
-            font-size: 20pt;
+            font-size: 19px;
             font-weight: bold;
         }
         .user-chart-banner {
@@ -198,8 +202,8 @@
             gap: 10px;
         }
         .btn-reset-chart {
-            font-family: 'Angsana New', sans-serif;
-            font-size: 15pt;
+            font-family: var(--font);
+            font-size: 14px;
             padding: 4px 14px;
             border-radius: 6px;
             border: 1px solid var(--primary);
@@ -232,8 +236,8 @@
             flex-wrap: wrap;
         }
         .tab-btn {
-            font-family: 'Angsana New', sans-serif;
-            font-size: 16pt;
+            font-family: var(--font);
+            font-size: 15px;
             padding: 6px 18px;
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -261,8 +265,8 @@
             border-color: var(--success);
         }
         .search-input {
-            font-family: 'Angsana New', sans-serif;
-            font-size: 16pt;
+            font-family: var(--font);
+            font-size: 15px;
             padding: 6px 14px;
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -283,7 +287,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 16pt;
+            font-size: 15px;
         }
         thead th {
             position: sticky;
@@ -327,7 +331,7 @@
             display: inline-block;
             padding: 2px 12px;
             border-radius: 999px;
-            font-size: 14pt;
+            font-size: 13px;
             font-weight: bold;
         }
         .pill-danger {
@@ -346,8 +350,9 @@
             border: 1px solid #fde68a;
         }
         .btn-detail {
-            font-family: 'Angsana New', sans-serif;
-            font-size: 15pt;
+            white-space: nowrap;
+            font-family: var(--font);
+            font-size: 14px;
             padding: 4px 14px;
             border-radius: 6px;
             border: 1px solid var(--primary);
@@ -392,10 +397,10 @@
         }
         .modal-header h3 {
             margin: 0;
-            font-size: 20pt;
+            font-size: 19px;
         }
         .modal-close {
-            font-size: 20pt;
+            font-size: 19px;
             background: none;
             border: none;
             cursor: pointer;
@@ -419,9 +424,394 @@
             border: 1px solid var(--border);
             margin-bottom: 16px;
         }
-        @media (max-width: 768px) {
+        .header-pills {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .date-bar-title {
+            font-weight: bold;
+            font-size: 17px;
+            color: var(--primary);
+        }
+        .date-label {
+            color: var(--text-muted);
+        }
+        .date-range {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .banner-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        body {
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* ---------- Tablet ---------- */
+        @media (max-width: 900px) {
             .kpi-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* ---------- Phone ---------- */
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+                font-size: 14px;
+            }
+            .header,
+            .date-bar,
+            .section-box {
+                padding: 14px;
+                border-radius: 10px;
+                margin-bottom: 12px;
+            }
+            .header h1 {
+                font-size: 20px;
+                line-height: 1.3;
+            }
+            .header p {
+                font-size: 13px;
+            }
+            .header > div {
+                width: 100%;
+            }
+            .header-pills {
+                justify-content: flex-start;
+            }
+            .pill {
+                font-size: 12px;
+                padding: 2px 10px;
+            }
+
+            /* Date filter */
+            .date-bar-title {
+                font-size: 15px;
+            }
+            .date-bar-top {
+                margin-bottom: 10px;
+            }
+            .date-controls {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 6px;
+                width: 100%;
+            }
+            .date-label {
+                font-size: 13px;
+            }
+            .date-select,
+            .date-input {
+                font-size: 14px;
+                padding: 8px 10px;
+                width: 100%;
+                min-width: 0;
+            }
+            .date-range {
+                display: grid;
+                grid-template-columns: 1fr auto 1fr;
+                gap: 6px;
+            }
+            .btn-clear-date {
+                width: 100%;
+                padding: 8px;
+            }
+            .date-chips {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                margin: 0 -14px;
+                padding: 2px 14px 4px;
+            }
+            .date-chips::-webkit-scrollbar {
+                display: none;
+            }
+            .date-chip {
+                flex: 0 0 auto;
+                font-size: 13px;
+                padding: 6px 12px;
+            }
+
+            /* KPI */
+            .kpi-grid {
+                gap: 10px;
+                margin-bottom: 12px;
+            }
+            .kpi-card {
+                padding: 12px;
+                border-radius: 10px;
+            }
+            .kpi-title {
+                font-size: 12px;
+                line-height: 1.3;
+                margin-bottom: 4px;
+            }
+            .kpi-value {
+                font-size: 22px;
+            }
+            .kpi-sub {
+                font-size: 12px;
+                line-height: 1.35;
+                margin-top: 4px;
+            }
+            #kpiApbText,
+            #kpiNopermText {
+                font-size: 13px !important;
+                line-height: 1.35;
+            }
+
+            /* Sections */
+            .section-header {
+                margin-bottom: 10px;
+                gap: 8px;
+            }
+            .section-title {
+                font-size: 16px;
+                line-height: 1.35;
+            }
+            .section-header > div {
+                width: 100%;
+            }
+            .section-header span {
+                font-size: 12px !important;
+            }
+            .chart-wrap {
+                height: 260px;
+            }
+            .user-chart-banner {
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+            .banner-actions {
+                width: 100%;
+            }
+            .banner-actions button {
+                flex: 1 1 auto;
+            }
+            .btn-reset-chart {
+                font-size: 13px;
+            }
+
+            /* Tabs + search */
+            .toolbar {
+                gap: 8px;
+                margin-bottom: 10px;
+            }
+            .tabs {
+                width: 100%;
+                gap: 6px;
+                flex-wrap: nowrap;
+            }
+            .tab-btn {
+                flex: 1 1 0;
+                min-width: 0;
+                font-size: 12px;
+                padding: 8px 6px;
+                line-height: 1.25;
+            }
+            .search-input {
+                width: 100%;
+                min-width: 0;
+                font-size: 14px;
+                padding: 9px 12px;
+            }
+
+            /* User table -> cards */
+            .user-table-container {
+                max-height: none;
+                overflow: visible;
+                border: none;
+                border-radius: 0;
+            }
+            .user-table thead {
+                display: none;
+            }
+            .user-table,
+            .user-table tbody {
+                display: block;
+                font-size: 13px;
+            }
+            .user-table tbody tr {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 4px 12px;
+                border: 1px solid var(--border);
+                border-left: 4px solid var(--success);
+                border-radius: 10px;
+                padding: 10px 12px;
+                margin-bottom: 8px;
+                background: var(--surface);
+            }
+            .user-table tbody tr.row-prob {
+                border-left-color: var(--danger);
+            }
+            .user-table tbody tr.selected-row {
+                box-shadow: 0 0 0 2px var(--primary);
+            }
+            .user-table tbody td {
+                display: block;
+                padding: 0;
+                border: none;
+                text-align: left !important;
+            }
+            .user-table td[data-label]::before {
+                content: attr(data-label) ": ";
+                color: var(--text-muted);
+                font-weight: normal;
+            }
+            .user-table .col-idx {
+                display: none;
+            }
+            .user-table .col-name {
+                grid-column: 1;
+                grid-row: 1;
+                min-width: 0;
+            }
+            .user-table .col-name .clickable-name {
+                font-size: 15px;
+                word-break: break-word;
+            }
+            .user-table .col-name div {
+                font-size: 12px !important;
+            }
+            .user-table .col-status {
+                grid-column: 2;
+                grid-row: 1;
+                justify-self: end;
+            }
+            .user-table .col-dept {
+                grid-column: 1 / -1;
+                font-size: 12px;
+                color: var(--text-muted);
+                word-break: break-word;
+            }
+            .user-table .col-cause {
+                grid-column: 1 / -1;
+                font-size: 12px;
+            }
+            .user-table .col-cause.is-empty {
+                display: none;
+            }
+            .user-table .col-action {
+                grid-column: 1 / -1;
+                margin-top: 4px;
+            }
+            .user-table .col-action .btn-detail {
+                width: 100%;
+                font-size: 13px;
+                padding: 7px;
+            }
+            .user-table tbody tr td[colspan] {
+                grid-column: 1 / -1;
+            }
+
+            /* Modal -> full screen sheet */
+            .modal-backdrop {
+                padding: 0;
+                align-items: stretch;
+            }
+            .modal {
+                max-width: none;
+                max-height: none;
+                height: 100%;
+                border-radius: 0;
+            }
+            .modal-header {
+                padding: 12px 14px;
+                position: sticky;
+                top: 0;
+                gap: 8px;
+            }
+            .modal-header h3 {
+                font-size: 15px;
+                line-height: 1.35;
+            }
+            .modal-close {
+                font-size: 22px;
+                padding: 4px 8px;
+            }
+            .modal-body {
+                padding: 12px;
+                flex: 1;
+            }
+            .user-meta {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 4px 12px;
+                font-size: 13px;
+                padding: 10px 12px;
+            }
+            .user-meta > div:nth-child(2) {
+                grid-column: 1 / -1;
+            }
+            .modal .table-container {
+                max-height: none !important;
+                overflow: visible;
+                border: none;
+            }
+            .history-table thead {
+                display: none;
+            }
+            .history-table,
+            .history-table tbody {
+                display: block;
+                font-size: 13px;
+            }
+            .history-table tbody tr {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                gap: 2px 10px;
+                align-items: center;
+                padding: 8px 4px;
+                border-bottom: 1px solid var(--border);
+            }
+            .history-table tbody td {
+                padding: 0;
+                border: none;
+            }
+            .history-table .h-idx {
+                grid-row: 1 / span 2;
+                color: var(--text-muted);
+                font-size: 12px;
+                min-width: 22px;
+            }
+            .history-table .h-time {
+                font-weight: 600;
+            }
+            .history-table .h-loc {
+                grid-column: 2;
+                grid-row: 2;
+                color: var(--text-muted);
+                font-size: 12px;
+            }
+            .history-table .h-status {
+                grid-column: 3;
+                grid-row: 1 / span 2;
+                text-align: right;
+            }
+            .history-table .pill {
+                font-size: 11px;
+                padding: 2px 8px;
+                white-space: normal;
+                max-width: 140px;
+                display: inline-block;
+                line-height: 1.3;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .kpi-value {
+                font-size: 19px;
+            }
+            .tab-btn {
+                font-size: 11px;
             }
         }
     </style>
@@ -434,25 +824,27 @@
                 <h1>แดชบอร์ดสรุปข้อมูลการทาบบัตรเข้า-ออก</h1>
                 <p id="headerSubtitle">ข้อมูลเริ่มระบบจริงตั้งแต่วันที่ 30/10/2569 ถึง 13/11/2569</p>
             </div>
-            <div style="text-align: right;" id="headerPills"></div>
+            <div class="header-pills" id="headerPills"></div>
         </div>
 
         <!-- Daily & Date Range Filter Bar -->
         <div class="date-bar">
             <div class="date-bar-top">
-                <div style="font-weight: bold; font-size: 18pt; color: var(--primary);">
+                <div class="date-bar-title">
                     📅 ตัวกรองวันที่ (เลือกดูรายวัน หรือ ช่วงวันที่):
                 </div>
                 <div class="date-controls">
-                    <label>เลือกวันเดียว:</label>
+                    <label class="date-label">เลือกวันเดียว:</label>
                     <select id="singleDateSelect" class="date-select" onchange="onSingleDateSelect(this.value)">
                         <option value="ALL">แสดงทุกวันรวมกัน (30/10/2026 - 13/11/2026)</option>
                     </select>
-                    <span style="color: var(--text-muted);">| หรือช่วงวันที่:</span>
+                    <span class="date-label date-range-label">หรือช่วงวันที่:</span>
+                    <span class="date-range">
                     <input type="date" id="startDateInput" class="date-input" min="2026-10-30" max="2026-11-13" value="2026-10-30" onchange="onDateRangeChange()">
                     <span>ถึง</span>
                     <input type="date" id="endDateInput" class="date-input" min="2026-10-30" max="2026-11-13" value="2026-11-13" onchange="onDateRangeChange()">
-                    <button class="btn-detail" onclick="selectSingleDate('ALL')">ล้างตัวกรองวันที่</button>
+                    </span>
+                    <button class="btn-detail btn-clear-date" onclick="selectSingleDate('ALL')">ล้างตัวกรองวันที่</button>
                 </div>
             </div>
             <!-- Quick Date Chips -->
@@ -478,8 +870,8 @@
             </div>
             <div class="kpi-card" style="cursor: default;">
                 <div class="kpi-title" id="kpiCauseTitle">สาเหตุของปัญหา</div>
-                <div style="font-size: 16pt; font-weight: bold; color: var(--danger); margin-top: 4px;" id="kpiApbText">-</div>
-                <div style="font-size: 16pt; font-weight: bold; color: var(--warning);" id="kpiNopermText">-</div>
+                <div style="font-size: 15px; font-weight: bold; color: var(--danger); margin-top: 4px;" id="kpiApbText">-</div>
+                <div style="font-size: 15px; font-weight: bold; color: var(--warning);" id="kpiNopermText">-</div>
             </div>
         </div>
 
@@ -487,7 +879,7 @@
         <div class="section-box" id="chartSectionBox">
             <div class="section-header">
                 <h2 class="section-title" id="chartHeading">กราฟแสดงสถิติการทาบบัตร</h2>
-                <div>
+                <div class="tabs chart-tabs">
                     <button class="tab-btn active-all" id="chartBtnAll" onclick="updateChartMode('all')">แสดงทั้งปกติและปัญหา</button>
                     <button class="tab-btn" id="chartBtnProb" onclick="updateChartMode('prob')">เจาะลึกเฉพาะสาเหตุปัญหา</button>
                 </div>
@@ -496,7 +888,7 @@
             <!-- Banner shown when viewing a specific user's chart -->
             <div class="user-chart-banner" id="userChartBanner">
                 <div id="userChartBannerText"></div>
-                <div style="display: flex; gap: 8px;">
+                <div class="banner-actions">
                     <button class="btn-detail" id="bannerHistoryBtn">ดูตารางเวลาทุกครั้ง</button>
                     <button class="btn-reset-chart" onclick="resetChartToAll()">↺ กลับไปดูกราฟภาพรวมทุกคน</button>
                 </div>
@@ -512,7 +904,7 @@
             <div class="section-header">
                 <div>
                     <h2 class="section-title" id="tableTitle">รายชื่อผู้ใช้งานทั้งหมด</h2>
-                    <span style="color: var(--text-muted); font-size: 14pt;">💡 คำแนะนำ: คลิกที่ <b>ชื่อผู้ใช้</b> เพื่อเปลี่ยนกราฟด้านบนเป็นของคนนั้น หรือกดปุ่ม <b>ดูประวัติ</b> เพื่อเปิดตารางเวลาทุกครั้ง</span>
+                    <span style="color: var(--text-muted); font-size: 13px;">💡 คำแนะนำ: คลิกที่ <b>ชื่อผู้ใช้</b> เพื่อเปลี่ยนกราฟด้านบนเป็นของคนนั้น หรือกดปุ่ม <b>ดูประวัติ</b> เพื่อเปิดตารางเวลาทุกครั้ง</span>
                 </div>
                 <span id="rowCountText" style="color: var(--text-muted);"></span>
             </div>
@@ -526,8 +918,8 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="ค้นหาชื่อ, หมายเลขบัตร หรือแผนก..." oninput="renderTable()">
             </div>
 
-            <div class="table-container">
-                <table>
+            <div class="table-container user-table-container">
+                <table class="user-table">
                     <thead>
                         <tr>
                             <th style="width: 50px;">#</th>
@@ -556,7 +948,7 @@
             <div class="modal-body">
                 <div class="user-meta" id="modalMeta"></div>
                 <div class="table-container" style="max-height: 450px;">
-                    <table>
+                    <table class="history-table">
                         <thead>
                             <tr>
                                 <th style="width: 60px;">ลำดับ</th>
@@ -722,7 +1114,7 @@
             document.getElementById('headerSubtitle').textContent = `ข้อมูลการทาบบัตร (${dateRangeLabel} | รวมทั้งหมด ${totalEvents.toLocaleString()} รายการ)`;
             document.getElementById('headerPills').innerHTML = `
                 <span class="pill pill-success">ทาบบัตรปกติ ${totalNorm.toLocaleString()} ครั้ง</span>
-                <span class="pill pill-danger" style="margin-left: 6px;">พบปัญหา ${totalProb.toLocaleString()} ครั้ง</span>
+                <span class="pill pill-danger">พบปัญหา ${totalProb.toLocaleString()} ครั้ง</span>
             `;
 
             document.getElementById('kpiTotalUsers').textContent = `${computedUsers.length} คน`;
@@ -888,6 +1280,10 @@
                 ];
             }
 
+            const isPhone = window.matchMedia('(max-width: 640px)').matches;
+            const fs = isPhone ? 11 : 13;
+            datasets.forEach(d => { if (d.pointRadius) d.pointRadius = isPhone ? 2 : 4; if (d.borderWidth) d.borderWidth = isPhone ? 2 : 2.5; });
+
             chartInstance = new Chart(ctx, {
                 type: currentChartMode === 'all' ? 'line' : 'bar',
                 data: {
@@ -903,20 +1299,22 @@
                             beginAtZero: true,
                             ticks: {
                                 precision: 0,
-                                font: { family: "'Angsana New', sans-serif", size: 15 }
+                                font: { family: "'Sarabun', sans-serif", size: fs }
                             }
                         },
                         x: {
-                            ticks: { font: { family: "'Angsana New', sans-serif", size: 15 } }
+                            ticks: { font: { family: "'Sarabun', sans-serif", size: fs }, maxRotation: isPhone ? 60 : 0, autoSkip: true, autoSkipPadding: 6,
+                                callback: function(v) { const l = this.getLabelForValue(v); return (isPhone && /^\d\d\/\d\d\/\d{4}$/.test(l)) ? l.slice(0, 5) : l; } }
                         }
                     },
                     plugins: {
                         legend: {
-                            labels: { font: { family: "'Angsana New', sans-serif", size: 16 } }
+                            position: isPhone ? 'bottom' : 'top',
+                            labels: { boxWidth: isPhone ? 12 : 40, font: { family: "'Sarabun', sans-serif", size: isPhone ? 12 : 14 } }
                         },
                         tooltip: {
-                            titleFont: { family: "'Angsana New', sans-serif", size: 16 },
-                            bodyFont: { family: "'Angsana New', sans-serif", size: 16 }
+                            titleFont: { family: "'Sarabun', sans-serif", size: 13 },
+                            bodyFont: { family: "'Sarabun', sans-serif", size: 13 }
                         }
                     }
                 }
@@ -991,20 +1389,20 @@
                 const safeName = u.name.replace(/'/g, "\'");
 
                 return `
-                    <tr class="${isSelected ? 'selected-row' : ''}">
-                        <td>${i + 1}</td>
-                        <td>
+                    <tr class="${isSelected ? 'selected-row' : ''} ${u.has_prob ? 'row-prob' : 'row-norm'}">
+                        <td class="col-idx">${i + 1}</td>
+                        <td class="col-name">
                             <a class="clickable-name" onclick="selectUserForChart('${safeName}')" title="คลิกเพื่อดูกราฟของ ${u.name}">
                                 📈 ${u.name}
                             </a>
-                            <div style="font-size: 14pt; color: var(--text-muted);">บัตร: ${u.card}</div>
+                            <div style="font-size: 13px; color: var(--text-muted);">บัตร: ${u.card}</div>
                         </td>
-                        <td>${u.dept}</td>
-                        <td>${statusBadge}</td>
-                        <td style="text-align: center; color: var(--success); font-weight: bold;">${u.norm_count}</td>
-                        <td style="text-align: center; color: ${u.prob_count > 0 ? 'var(--danger)' : 'var(--text-muted)'}; font-weight: bold;">${u.prob_count}</td>
-                        <td>${causeText}</td>
-                        <td style="text-align: center;">
+                        <td class="col-dept" data-label="แผนก">${u.dept}</td>
+                        <td class="col-status">${statusBadge}</td>
+                        <td class="col-num" data-label="ทาบปกติ" style="text-align: center; color: var(--success); font-weight: bold;">${u.norm_count}</td>
+                        <td class="col-num" data-label="พบปัญหา" style="text-align: center; color: ${u.prob_count > 0 ? 'var(--danger)' : 'var(--text-muted)'}; font-weight: bold;">${u.prob_count}</td>
+                        <td class="col-cause ${u.has_prob ? '' : 'is-empty'}" data-label="สาเหตุ">${causeText}</td>
+                        <td class="col-action" style="text-align: center;">
                             <button class="btn-detail" onclick="openUserModalByName('${safeName}')">ดูประวัติ (${u.total})</button>
                         </td>
                     </tr>
@@ -1036,10 +1434,10 @@
                     : `<span class="pill pill-success">${ev.desc}</span>`;
                 return `
                     <tr>
-                        <td>${i + 1}</td>
-                        <td>${ev.time}</td>
-                        <td>${ev.loc}</td>
-                        <td>${badge}</td>
+                        <td class="h-idx">${i + 1}</td>
+                        <td class="h-time">${ev.time}</td>
+                        <td class="h-loc">${ev.loc}</td>
+                        <td class="h-status">${badge}</td>
                     </tr>
                 `;
             }).join('');
@@ -1050,6 +1448,12 @@
         function closeModal() {
             document.getElementById('detailModal').style.display = 'none';
         }
+
+        let lastPhone = window.matchMedia('(max-width: 640px)').matches;
+        window.addEventListener('resize', () => {
+            const nowPhone = window.matchMedia('(max-width: 640px)').matches;
+            if (nowPhone !== lastPhone) { lastPhone = nowPhone; renderChart(); }
+        });
 
         // Boot
         initDateControls();
